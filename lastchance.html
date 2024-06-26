@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solitaire & Hearts Games</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+        #solitaire-scores, #hearts-scores {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Solitaire Game -->
+    <canvas id="solitaire-canvas" width="800" height="600"></canvas>
+    <div id="solitaire-scores"></div>
+
+    <!-- Hearts Game -->
+    <canvas id="hearts-canvas" width="800" height="600"></canvas>
+    <div id="hearts-scores"></div>
+
+    <script>
+        // Solitaire Game Variables
+        const solitaireCanvas = document.getElementById('solitaire-canvas');
+        const solitaireCtx = solitaireCanvas.getContext('2d');
+        const solitaireScoresDiv = document.getElementById('solitaire-scores');
+        let stock, waste, foundations, tableau, selectedCard, selectedPile, moves;
+
+        // Initialize Solitaire Game State
+        function initializeSolitaireGameState() {
+            return {
+                deck: [],
+                stock: [],
+                waste: [],
+                foundations: [[], [], [], []],
+                tableau: [[], [], [], [], [], [], []],
+                moves: []
+            };
+        }
+
+        // Initialize Solitaire Game on Page Load
+        function initSolitaireGame() {
+            solitaireCtx.clearRect(0, 0, solitaireCanvas.width, solitaireCanvas.height);
+            solitaireCtx.font = '16px Arial';
+            solitaireCtx.fillStyle = 'black';
+            solitaireCtx.fillText('Loading Solitaire Game...', 10, 30);
+
+            stock = [];
+            waste = [];
+            foundations = [[], [], [], []];
+            tableau = [[], [], [], [], [], [], []];
+            selectedCard = null;
+            selectedPile = null;
+            moves = [];
+
+            createDeck();
+            shuffleDeck();
+            dealCards();
+
+            drawSolitaireGame();
+        }
+
+        // Create a standard deck of cards
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ rank, suit, faceUp: false });
+                }
+            }
+        }
+
+        // Shuffle the deck of cards
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        // Deal cards to tableau and stock
+        function dealCards() {
+            let dealIndex = 0;
+            for (let row = 0; row < tableau.length; row++) {
+                for (let col = 0; col <= row; col++) {
+                    let card = deck[dealIndex];
+                    if (row === col) {
+                        card.faceUp = true;
+                    }
+                    tableau[row].push(card);
+                    dealIndex++;
+                }
+            }
+            stock = deck.slice(dealIndex);
+        }
+
+        // Draw the entire Solitaire game
+        function drawSolitaireGame() {
+            solitaireCtx.clearRect(0, 0, solitaireCanvas.width, solitaireCanvas.height);
+
+            // Draw stock and waste piles
+            drawStockAndWaste();
+
+            // Draw foundations
+            drawFoundations();
+
+            // Draw tableau
+            drawTableau();
+
+            // Draw scores
+            updateSolitaireScores();
+        }
+
+        // Draw stock and waste piles
+        function drawStockAndWaste() {
+            const stockX = 20;
+            const stockY = 20;
+            const wasteX = stockX + 100;
+            const wasteY = 20;
+
+            // Draw stock pile
+            if (stock.length > 0) {
+                drawCardBack(stockX, stockY);
+            } else {
+                solitaireCtx.fillStyle = 'gray';
+                solitaireCtx.fillRect(stockX, stockY, 72, 96);
+            }
+
+            // Draw waste pile
+            for (let i = 0; i < waste.length; i++) {
+                const card = waste[i];
+                const x = wasteX + i * 20;
+                drawCard(x, wasteY, card.rank, card.suit, card.faceUp);
+            }
+        }
+
+        // Draw foundations
+        function drawFoundations() {
+            for (let i = 0; i < foundations.length; i++) {
+                const pile = foundations[i];
+                const x = 200 + i * 100;
+                const y = 20;
+                if (pile.length > 0) {
+                    const card = pile[pile.length - 1];
+                    drawCard(x, y, card.rank, card.suit, true);
+                } else {
+                    solitaireCtx.fillStyle = 'gray';
+                    solitaireCtx.fillRect(x, y, 72, 96);
+                }
+            }
+        }
+
+        // Draw tableau
+        function drawTableau() {
+            for (let i = 0; i < tableau.length; i++) {
+                const pile = tableau[i];
+                const startX = 20 + i * 100;
+                const startY = 120;
+
+                for (let j = 0; j < pile.length; j++) {
+                    const card = pile[j];
+                    const x = startX;
+                    const y = startY + j * 20;
+                    drawCard(x, y, card.rank, card.suit, card.faceUp);
+                }
+            }
+        }
+
+        // Draw a card back
+        function drawCardBack(x, y) {
+            solitaireCtx.fillStyle = 'blue';
+            solitaireCtx.fillRect(x, y, 72, 96);
+        }
+
+        // Draw a card
+        function drawCard(x, y, rank, suit, faceUp) {
+            solitaireCtx.beginPath();
+            solitaireCtx.rect(x, y, 72, 96);
+            solitaireCtx.fillStyle = 'white';
+            solitaireCtx.fill();
+            solitaireCtx.lineWidth = 1;
+            solitaireCtx.strokeStyle = 'black';
+            solitaireCtx.stroke();
+
+            if (faceUp) {
+                solitaireCtx.font = '16px Arial';
+                solitaireCtx.fillStyle = suit === '♥' || suit === '♦' ? 'red' : 'black';
+                solitaireCtx.fillText(rank + suit, x + 5, y + 20);
+            } else {
+                solitaireCtx.fillStyle = 'gray';
+                solitaireCtx.fillRect(x, y, 72, 96);
+            }
+        }
+
+        // Update scores display for Solitaire
+        function updateSolitaireScores() {
+            solitaireScoresDiv.innerHTML = '';
+            // Implement your scoring logic here
+        }
+
+        // Handle click events on the canvas
+        solitaireCanvas.addEventListener('click', handleClick);
+
+        // Handle click events on the Solitaire canvas
+        function handleClick(event) {
+            // Implement your click handling logic here
+        }
+
+        // Hearts Game Variables
+        const heartsCanvas = document.getElementById('hearts-canvas');
+        const heartsCtx = heartsCanvas.getContext('2d');
+        const heartsScoresDiv = document.getElementById('hearts-scores');
+        const suits = ['♠', '♥', '♦', '♣'];
+        const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        let heartsGameState;
+
+        // Initialize Hearts Game State
+        function initializeHeartsGameState() {
+            return {
+                deck: [],
+                hands: [[], [], [], []],
+                scores: [0, 0, 0, 0],
+                roundScores: [0, 0, 0, 0],
+                tricksTaken: [0, 0, 0, 0],
+                trick: [],
+                cardsToPass: [],
+                passingStage: false,
+                heartsBroken: false,
+                currentPlayer: 0,
+                passDirection: 1 // 0 = left, 1 = right, 2 = across, 3 = none
+            };
+        }
+
+        // Shuffle the deck
+        function shuffleHeartsDeck() {
+            const deck = [];
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ rank, suit });
+                }
+            }
+
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            return deck;
+        }
+
+        // Deal cards to players
+        function dealHeartsCards() {
+            const deck = [...heartsGameState.deck];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 13; j++) {
+                    heartsGameState.hands[i].push(deck.pop());
+                }
+            }
+        }
+
+        // Draw a Hearts card
+        function drawHeartsCard(card, x, y, isFaceUp = true) {
+            if (isFaceUp) {
+                heartsCtx.fillStyle = 'white';
+                heartsCtx.fillRect(x, y, 50, 70);
+                heartsCtx.strokeStyle = 'black';
+                heartsCtx.strokeRect(x, y, 50, 70);
+                heartsCtx.fillStyle = ['♠', '♣'].includes(card.suit) ? 'black' : 'red';
+                heartsCtx.font = '16px Arial';
+                heartsCtx.fillText(card.rank + card.suit, x + 5, y + 20);
+            } else {
+                heartsCtx.fillStyle = 'blue';
+                heartsCtx.fillRect(x, y, 50, 70);
+            }
+        }
+
+        // Draw Hands
+        function drawHeartsHands() {
+            const handY = 10;
+            const handX = 10;
+            for (let i = 0; i < 4; i++) {
+                const x = (i % 2) * 750;
+                const y = Math.floor(i / 2) * 500;
+                heartsGameState.hands[i].forEach((card, j) => {
+                    drawHeartsCard(card, x + handX, y + handY + j * 20, i === 0 || i === 2);
+                });
+            }
+        }
+
+        // Draw Trick
+        function drawHeartsTrick() {
+            const trickX = 350;
+            const trickY = 250;
+            heartsGameState.trick.forEach((trick, i) => {
+                drawHeartsCard(trick, trickX + 60 * i, trickY);
+            });
+        }
+
+        // Draw Game
+        function drawHeartsGame() {
+            heartsCtx.clearRect(0, 0, heartsCanvas.width, heartsCanvas.height);
+            drawHeartsHands();
+            drawHeartsTrick();
+            updateHeartsScores();
+        }
+
+        // Update Scores display for Hearts
+        function updateHeartsScores() {
+            heartsScoresDiv.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                heartsScoresDiv.innerHTML += `Player ${i + 1}: ${heartsGameState.scores[i]}<br>`;
+            }
+        }
+
+        // Start Hearts Game
+        function startHeartsGame() {
+            heartsGameState = initializeHeartsGameState();
+            heartsGameState.deck = shuffleHeartsDeck();
+            dealHeartsCards();
+            drawHeartsGame();
+        }
+
+        // Initialize Hearts Game on Page Load
+        document.addEventListener('DOMContentLoaded', startHeartsGame);
+
+    </script>
+</body>
+</html>

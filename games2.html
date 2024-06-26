@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games that don't work</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        button, select {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .hearts-controls {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #heartsScores {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-menu">
+        <a href="index.html">Home</a>
+        <a href="field.html">FTC Field Path Planner</a>
+    </div>
+    <div class="container">
+        <h1>Solitaire</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <button id="newGameBtn">New Game</button>
+    </div>
+
+    <div class="container">
+        <h1>Hearts</h1>
+        <canvas id="heartsCanvas" width="800" height="600"></canvas>
+        <div class="hearts-controls">
+            <label for="aiPlayers">Number of AI players:</label>
+            <select id="aiPlayers">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+        </div>
+        <button id="newHeartsGameBtn">New Hearts Game</button>
+        <div id="heartsScores"></div>
+    </div>
+
+    <script>
+        // Solitaire Game Logic
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const CARD_WIDTH = 60;
+        const CARD_HEIGHT = 90;
+        const CARD_GAP = 20;
+        const TABLEAU_OFFSET_Y = 100;
+        const FOUNDATION_OFFSET_Y = 20;
+        const FOUNDATION_OFFSET_X = 300;
+        const CARD_BACK_COLOR = '#999';
+        const CARD_COLORS = {
+            '♠': 'black',
+            '♣': 'black',
+            '♥': 'red',
+            '♦': 'red'
+        };
+        const DECK_OFFSET_X = 700;
+        const DECK_OFFSET_Y = 20;
+        const WASTE_OFFSET_X = 620;
+        const WASTE_OFFSET_Y = 20;
+
+        // Game state
+        let gameState;
+
+        function initializeGameState() {
+            return {
+                deck: [],
+                tableau: [[], [], [], [], [], [], []],
+                foundation: [[], [], [], []],
+                stock: [],
+                waste: [],
+                won: false
+            };
+        }
+
+        function shuffleDeck() {
+            let deck = [];
+            const suits = ['♠', '♣', '♥', '♦'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ suit, rank, isFaceUp: false });
+                }
+            }
+
+            // Fisher-Yates shuffle algorithm
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            return deck;
+        }
+
+        function dealCards() {
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j <= i; j++) {
+                    let card = gameState.deck.pop();
+                    if (j === i) {
+                        card.isFaceUp = true;
+                    }
+                    gameState.tableau[i].push(card);
+                }
+            }
+        }
+
+        function drawCard(card, x, y) {
+            if (card.isFaceUp) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                ctx.fillStyle = CARD_COLORS[card.suit];
+                ctx.font = '16px Arial';
+                ctx.fillText(card.rank + card.suit, x + 5, y + 20);
+            } else {
+                ctx.fillStyle = CARD_BACK_COLOR;
+                ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+            }
+        }
+
+        function drawTableau() {
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < gameState.tableau[i].length; j++) {
+                    const card = gameState.tableau[i][j];
+                    const x = (i * (CARD_WIDTH + CARD_GAP)) + 20;
+                    const y = (j * (CARD_HEIGHT / 3)) + TABLEAU_OFFSET_Y;
+                    drawCard(card, x, y);
+                }
+            }
+        }
+
+        function drawFoundation() {
+            for (let i = 0; i < 4; i++) {
+                const x = (i * (CARD_WIDTH + CARD_GAP)) + FOUNDATION_OFFSET_X;
+                const y = FOUNDATION_OFFSET_Y;
+                ctx.strokeStyle = '#888';
+                ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                if (gameState.foundation[i].length > 0) {
+                    drawCard(gameState.foundation[i][gameState.foundation[i].length - 1], x, y);
+                }
+            }
+        }
+
+        function drawWaste() {
+            if (gameState.waste.length > 0) {
+                const x = WASTE_OFFSET_X;
+                const y = WASTE_OFFSET_Y;
+                drawCard(gameState.waste[gameState.waste.length - 1], x, y);
+            }
+        }
+
+        function drawDeck() {
+            const x = DECK_OFFSET_X;
+            const y = DECK_OFFSET_Y;
+            ctx.fillStyle = CARD_BACK_COLOR;
+            ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTableau();
+            drawFoundation();
+            drawWaste();
+            drawDeck();
+        }
+
+        function resetGame() {
+            gameState = initializeGameState();
+            gameState.deck = shuffleDeck();
+            dealCards();
+            drawGame();
+        }
+
+        function handleNewGameClick() {
+            resetGame();
+        }
+
+        function checkWin() {
+            return gameState.foundation.every(pile => pile.length === 13);
+        }
+
+        function celebrateWin() {
+            document.body.style.background = 'linear-gradient(to right, violet, indigo, blue, green, yellow, orange, red)';
+        }
+
+        function isValidMove(cardToMove, targetPile, isFoundation = false) {
+            if (isFoundation) {
+                if (targetPile.length === 0) {
+                    return cardToMove.rank === 'A';
+                } else {
+                    const lastCard = targetPile[targetPile.length - 1];
+                    return cardToMove.suit === lastCard.suit && 
+                           getRankValue(cardToMove.rank) === getRankValue(lastCard.rank) + 1;
+                }
+            } else {
+                if (targetPile.length === 0) {
+                    return cardToMove.rank === 'K';
+                } else {
+                    const lastCard = targetPile[targetPile.length - 1];
+                    const isOppositeColor = (CARD_COLORS[lastCard.suit] !== CARD_COLORS[cardToMove.suit]);
+                    return isOppositeColor && (getRankValue(lastCard.rank) === getRankValue(cardToMove.rank) + 1);
+                }
+            }
+        }
+
+        function getRankValue(rank) {
+            const rankValues = {'A': 1, 'J': 11, 'Q': 12, 'K': 13};
+            return rankValues[rank] || parseInt(rank);
+        }
+
+        function moveCards(sourceIndex, sourcePile, targetPile) {
+            const cardsToMove = sourcePile.splice(sourceIndex);
+            targetPile.push(...cardsToMove);
+            if (sourcePile.length > 0 && !sourcePile[sourcePile.length - 1].isFaceUp) {
+                sourcePile[sourcePile.length - 1].isFaceUp = true;
+            }
+            drawGame();
+            if (checkWin()) {
+                gameState.won = true;
+                celebrateWin();
+            }
+        }
+
+        function moveCard(sourceIndex, sourcePile, targetPile, isFoundation = false) {
+            const cardToMove = sourcePile[sourceIndex];
+            if (isValidMove(cardToMove, targetPile, isFoundation)) {
+                moveCards(sourceIndex, sourcePile, targetPile);
+            }
+        }
+
+        function handleTableauClick(x, y) {
+            for (let i = 0; i < 7; i++) {
+                const pileX = (i * (CARD_WIDTH + CARD_GAP)) + 20;
+                if (x >= pileX && x <= pileX + CARD_WIDTH) {
+                    for (let j = gameState.tableau[i].length - 1; j >= 0; j--) {
+                        const pileY = (j * (CARD_HEIGHT / 3)) + TABLEAU_OFFSET_Y;
+                        if (y >= pileY && y <= pileY + CARD_HEIGHT) {
+                            if (gameState.tableau[i][j].isFaceUp) {
+                                moveCard(j, gameState.tableau[i], gameState.tableau[x]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleFoundationClick(x, y) {
+            for (let i = 0; i < 4; i++) {
+                const pileX = (i * (CARD_WIDTH + CARD_GAP)) + FOUNDATION_OFFSET_X;
+                if (x >= pileX && x <= pileX + CARD_WIDTH && y >= FOUNDATION_OFFSET_Y && y <= FOUNDATION_OFFSET_Y + CARD_HEIGHT) {
+                    for (let j = 0; j < 7; j++) {
+                        const pile = gameState.tableau[j];
+                        if (pile.length > 0) {
+                            const cardToMove = pile[pile.length - 1];
+                            if (isValidMove(cardToMove, gameState.foundation[i], true)) {
+                                moveCards(pile.length - 1, pile, gameState.foundation[i]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleDeckClick(x, y) {
+            if (x >= DECK_OFFSET_X && x <= DECK_OFFSET_X + CARD_WIDTH && y >= DECK_OFFSET_Y && y <= DECK_OFFSET_Y + CARD_HEIGHT) {
+                if (gameState.deck.length > 0) {
+                    const card = gameState.deck.pop();
+                    card.isFaceUp = true;
+                    gameState.waste.push(card);
+                } else {
+                    gameState.deck = gameState.waste.reverse();
+                    gameState.waste = [];
+                    gameState.deck.forEach(card => card.isFaceUp = false);
+                }
+                drawGame();
+            }
+        }
+
+        function handleWasteClick(x, y) {
+            if (x >= WASTE_OFFSET_X && x <= WASTE_OFFSET_X + CARD_WIDTH && y >= WASTE_OFFSET_Y && y <= WASTE_OFFSET_Y + CARD_HEIGHT) {
+                if (gameState.waste.length > 0) {
+                    const card = gameState.waste[gameState.waste.length - 1];
+                    for (let i = 0; i < 7; i++) {
+                        if (isValidMove(card, gameState.tableau[i])) {
+                            moveCard(gameState.waste.length - 1, gameState.waste, gameState.tableau[i]);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleCanvasClick(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            if (!gameState.won) {
+                handleTableauClick(x, y);
+                handleFoundationClick(x, y);
+                handleDeckClick(x, y);
+                handleWasteClick(x, y);
+            }
+        }
+
+        document.getElementById('newGameBtn').addEventListener('click', handleNewGameClick);
+        canvas.addEventListener('click', handleCanvasClick);
+
+        // Hearts Game Logic
+        const heartsCanvas = document.getElementById('heartsCanvas');
+        const heartsCtx = heartsCanvas.getContext('2d');
+        const heartsScoresDiv = document.getElementById('heartsScores');
+
+        const HEARTS_CARD_WIDTH = 40;
+        const HEARTS_CARD_HEIGHT = 60;
+        const HEARTS_CARD_GAP = 10;
+        const HEARTS_PLAYER_HAND_Y = heartsCanvas.height - HEARTS_CARD_HEIGHT - 10;
+        const HEARTS_AIPLAYERS_HAND_Y = 10;
+
+        let heartsGameState;
+
+        function initializeHeartsGameState() {
+            return {
+                deck: [],
+                hands: [[], [], [], []],
+                trick: [],
+                scores: [0, 0, 0, 0],
+                currentPlayer: 0,
+                aiPlayers: parseInt(document.getElementById('aiPlayers').value),
+                heartsBroken: false,
+                passDirection: 0, // 0: left, 1: right, 2: across, 3: no passing
+                passingStage: true,
+                cardsToPass: [],
+                roundScores: [0, 0, 0, 0],
+                tricksTaken: [0, 0, 0, 0]
+            };
+        }
+
+        function shuffleHeartsDeck() {
+            let deck = [];
+            const suits = ['♠', '♣', '♥', '♦'];
+            const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ suit, rank });
+                }
+            }
+
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            return deck;
+        }
+
+        function dealHeartsCards() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 13; j++) {
+                    heartsGameState.hands[i].push(heartsGameState.deck.pop());
+                }
+                heartsGameState.hands[i].sort((a, b) => {
+                    if (a.suit !== b.suit) {
+                        return ['♣', '♦', '♠', '♥'].indexOf(a.suit) - ['♣', '♦', '♠', '♥'].indexOf(b.suit);
+                    }
+                    return getRankValue(a.rank) - getRankValue(b.rank);
+                });
+            }
+        }
+
+        function drawHeartsCard(card, x, y, isFaceUp = true) {
+            if (isFaceUp) {
+                heartsCtx.fillStyle = 'white';
+                heartsCtx.fillRect(x, y, HEARTS_CARD_WIDTH, HEARTS_CARD_HEIGHT);
+                heartsCtx.strokeStyle = 'black';
+                heartsCtx.strokeRect(x, y, HEARTS_CARD_WIDTH, HEARTS_CARD_HEIGHT);
+                heartsCtx.fillStyle = CARD_COLORS[card.suit];
+                heartsCtx.font = '12px Arial';
+                heartsCtx.fillText(card.rank + card.suit, x + 3, y + 15);
+            } else {
+                heartsCtx.fillStyle = CARD_BACK_COLOR;
+                heartsCtx.fillRect(x, y, HEARTS_CARD_WIDTH, HEARTS_CARD_HEIGHT);
+            }
+        }
+
+        function drawHeartsHands() {
+            const playerHand = heartsGameState.hands[0];
+            const totalWidth = playerHand.length * (HEARTS_CARD_WIDTH + HEARTS_CARD_GAP) - HEARTS_CARD_GAP;
+            const startX = (heartsCanvas.width - totalWidth) / 2;
+
+            for (let i = 0; i < playerHand.length; i++) {
+                const card = playerHand[i];
+                const x = startX + (i * (HEARTS_CARD_WIDTH + HEARTS_CARD_GAP));
+                const y = HEARTS_PLAYER_HAND_Y;
+                drawHeartsCard(card, x, y);
+            }
+
+            // Draw AI hands face down
+            for (let i = 1; i < 4; i++) {
+                const x = (i === 1 || i === 3) ? 10 : heartsCanvas.width - HEARTS_CARD_WIDTH - 10;
+                const y = (i === 1) ? 10 : (i === 2) ? heartsCanvas.height / 2 - HEARTS_CARD_HEIGHT / 2 : heartsCanvas.height - HEARTS_CARD_HEIGHT - 10;
+                for (let j = 0; j < heartsGameState.hands[i].length; j++) {
+                    drawHeartsCard(null, x, y + j * 5, false);
+                }
+            }
+        }
+
+        function drawHeartsTrick() {
+            const positions = [
+                { x: heartsCanvas.width / 2, y: heartsCanvas.height - HEARTS_CARD_HEIGHT - 20 },
+                { x: 20, y: heartsCanvas.height / 2 },
+                { x: heartsCanvas.width / 2, y: 20 },
+                { x: heartsCanvas.width - HEARTS_CARD_WIDTH - 20, y: heartsCanvas.height / 2 }
+            ];
+
+            for (let i = 0; i < heartsGameState.trick.length; i++) {
+                const card = heartsGameState.trick[i].card;
+                const player = heartsGameState.trick[i].player;
+                const { x, y } = positions[player];
+                drawHeartsCard(card, x, y);
+            }
+        }
+
+        function drawHeartsGame() {
+            heartsCtx.clearRect(0, 0, heartsCanvas.width, heartsCanvas.height);
+            drawHeartsHands();
+            drawHeartsTrick();
+            
+            // Draw scores
+            heartsCtx.fillStyle = 'black';
+            heartsCtx.font = '16px Arial';
+            for (let i = 0; i < 4; i++) {
+                const x = (i === 1 || i === 3) ? 10 : heartsCanvas.width - 100;
+                const y = (i === 1) ? 120 : (i === 2) ? heartsCanvas.height / 2 - 60 : heartsCanvas.height - 120;
+                heartsCtx.fillText(`Player ${i + 1}: ${heartsGameState.scores[i]}`, x, y);
+            }
+
+            // Draw pass direction
+            const passDirections = ['Left', 'Right', 'Across', 'Hold'];
+            heartsCtx.fillText(`Pass: ${passDirections[heartsGameState.passDirection]}`, 10, 20);
+
+            // Draw current player
+            heartsCtx.fillText(`Current Player: ${heartsGameState.currentPlayer + 1}`, 10, 40);
+        }
+
+        function resetHeartsGame() {
+            heartsGameState = initializeHeartsGameState();
+            heartsGameState.deck = shuffleHeartsDeck();
+            dealHeartsCards();
+            heartsGameState.currentPlayer = heartsGameState.hands.findIndex(hand => 
+                hand.some(card => card.rank === '2' && card.suit === '♣')
+            );
+            drawHeartsGame();
+            startPassing();
+        }
+
+        function startPassing() {
+            if (heartsGameState.passDirection === 3) {
+                startTrick();
+                return;
+            }
+            heartsGameState.passingStage = true;
+            heartsGameState.cardsToPass = [];
+            if (heartsGameState.currentPlayer === 0) {
+                alert("Select 3 cards to pass");
+            } else {
+                passAICards();
+            }
+        }
+
+        function passAICards() {
+            const hand = heartsGameState.hands[heartsGameState.currentPlayer];
+            heartsGameState.cardsToPass = hand.slice(0, 3);
+            passingComplete();
+        }
+
+        function passingComplete() {
+            if (heartsGameState.cardsToPass.length === 3) {
+                const passTo = (heartsGameState.currentPlayer + [1, 3, 2][heartsGameState.passDirection]) % 4;
+                heartsGameState.hands[passTo].push(...heartsGameState.cardsToPass);
+                heartsGameState.hands[heartsGameState.currentPlayer] = 
+                    heartsGameState.hands[heartsGameState.currentPlayer].filter(card => 
+                        !heartsGameState.cardsToPass.includes(card)
+                    );
+                heartsGameState.cardsToPass = [];
+                heartsGameState.currentPlayer = (heartsGameState.currentPlayer + 1) % 4;
+                if (heartsGameState.currentPlayer === 0) {
+                    heartsGameState.passingStage = false;
+                    startTrick();
+                } else {
+                    passAICards();
+                }
+            }
+        }
+
+        function startTrick() {
+            heartsGameState.trick = [];
+            heartsGameState.currentPlayer = heartsGameState.hands.findIndex(hand => 
+                hand.some(card => card.rank === '2' && card.suit === '♣')
+            );
+            if (heartsGameState.currentPlayer !== 0) {
+                playAICard();
+            }
+            drawHeartsGame();
+        }
+
+        function handleHeartsPlayerMove(cardIndex) {
+            const card = heartsGameState.hands[0][cardIndex];
+            if (heartsGameState.passingStage) {
+                if (heartsGameState.cardsToPass.length < 3) {
+                    heartsGameState.cardsToPass.push(card);
+                    heartsGameState.hands[0].splice(cardIndex, 1);
+                    if (heartsGameState.cardsToPass.length === 3) {
+                        passingComplete();
+                    }
+                }
+            } else if (isValidHeartsMove(card)) {
+                playCard(0, card);
+                if (heartsGameState.trick.length === 4) {
+                    setTimeout(resolveTrick, 1000);
+                } else {
+                    heartsGameState.currentPlayer = (heartsGameState.currentPlayer + 1) % 4;
+                    playAICard();
+                }
+            }
+            drawHeartsGame();
+        }
+
+        function isValidHeartsMove(card) {
+            if (heartsGameState.trick.length === 0) {
+                if (heartsGameState.hands[0].some(c => c.rank === '2' && c.suit === '♣')) {
+                    return card.rank === '2' && card.suit === '♣';
+                }
+                if (!heartsGameState.heartsBroken && card.suit === '♥') {
+                    return !heartsGameState.hands[0].some(c => c.suit !== '♥');
+                }
+                return true;
+            } else {
+                const leadSuit = heartsGameState.trick[0].card.suit;
+                if (card.suit === leadSuit) {
+                    return true;
+                }
+                return !heartsGameState.hands[0].some(c => c.suit === leadSuit);
+            }
+        }
+
+        function playCard(player, card) {
+            heartsGameState.trick.push({ player, card });
+            heartsGameState.hands[player] = heartsGameState.hands[player].filter(c => c !== card);
+            if (card.suit === '♥') {
+                heartsGameState.heartsBroken = true;
+            }
+        }
+
+        function playAICard() {
+            while (heartsGameState.currentPlayer !== 0) {
+                const hand = heartsGameState.hands[heartsGameState.currentPlayer];
+                let card;
+
+                if (heartsGameState.trick.length === 0) {
+                    card = hand.find(c => c.rank === '2' && c.suit === '♣') ||
+                           hand.find(c => c.suit !== '♥') ||
+                           hand[0];
+                } else {
+                    const leadSuit = heartsGameState.trick[0].card.suit;
+                    card = hand.find(c => c.suit === leadSuit) || hand[0];
+                }
+
+                playCard(heartsGameState.currentPlayer, card);
+                
+                if (heartsGameState.trick.length === 4) {
+                    setTimeout(resolveTrick, 1000);
+                    break;
+                } else {
+                    heartsGameState.currentPlayer = (heartsGameState.currentPlayer + 1) % 4;
+                }
+            }
+            drawHeartsGame();
+        }
+
+        function resolveTrick() {
+            const leadSuit = heartsGameState.trick[0].card.suit;
+            let winnerIndex = 0;
+            let maxRank = getRankValue(heartsGameState.trick[0].card.rank);
+
+            for (let i = 1; i < 4; i++) {
+                const card = heartsGameState.trick[i].card;
+                if (card.suit === leadSuit && getRankValue(card.rank) > maxRank) {
+                    winnerIndex = i;
+                    maxRank = getRankValue(card.rank);
+                }
+            }
+
+            const winner = heartsGameState.trick[winnerIndex].player;
+            heartsGameState.tricksTaken[winner]++;
+
+            let points = heartsGameState.trick.reduce((sum, { card }) => {
+                if (card.suit === '♥') return sum + 1;
+                if (card.suit === '♠' && card.rank === 'Q') return sum + 13;
+                return sum;
+            }, 0);
+
+            heartsGameState.roundScores[winner] += points;
+
+            if (heartsGameState.hands[0].length === 0) {
+                endRound();
+            } else {
+                heartsGameState.currentPlayer = winner;
+                heartsGameState.trick = [];
+                if (winner !== 0) {
+                    playAICard();
+                }
+            }
+            drawHeartsGame();
+        }
+
+        function endRound() {
+            // Check for shooting the moon
+            const shooterIndex = heartsGameState.roundScores.findIndex(score => score === 26);
+            if (shooterIndex !== -1) {
+                for (let i = 0; i < 4; i++) {
+                    if (i === shooterIndex) {
+                        heartsGameState.scores[i] -= 26;
+                    } else {
+                        heartsGameState.scores[i] += 26;
+                    }
+                }
+            } else {
+                for (let i = 0; i < 4; i++) {
+                    heartsGameState.scores[i] += heartsGameState.roundScores[i];
+                }
+            }
+
+            updateScoresDisplay();
+
+            if (heartsGameState.scores.some(score => score >= 100)) {
+                endGame();
+            } else {
+                heartsGameState.passDirection = (heartsGameState.passDirection + 1) % 4;
+                resetHeartsGame();
+            }
+        }
+
+        function endGame() {
+            const minScore = Math.min(...heartsGameState.scores);
+            const winners = heartsGameState.scores
+                .map((score, index) => ({ score, index }))
+                .filter(({ score }) => score === minScore);
+
+            let winnerMessage = "Game Over! Winner(s): ";
+            winners.forEach((winner, index) => {
+                winnerMessage += `Player ${winner.index + 1}`;
+                if (index < winners.length - 1) {
+                    winnerMessage += ", ";
+                }
+            });
+            winnerMessage += ` with ${minScore} points!`;
+
+            alert(winnerMessage);
+        }
+
+        function updateScoresDisplay() {
+            heartsScoresDiv.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                heartsScoresDiv.innerHTML += `Player ${i + 1}: ${heartsGameState.scores[i]}<br>`;
+            }
+        }
+
+        heartsCanvas.addEventListener('click', (event) => {
+            if (heartsGameState.currentPlayer === 0) {
+                const rect = heartsCanvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                if (y >= HEARTS_PLAYER_HAND_Y) {
+                    const playerHand = heartsGameState.hands[0];
+                    const totalWidth = playerHand.length * (HEARTS_CARD_WIDTH + HEARTS_CARD_GAP) - HEARTS_CARD_GAP;
+                    const startX = (heartsCanvas.width - totalWidth) / 2;
+
+                    for (let i = 0; i < playerHand.length; i++) {
+                        const cardX = startX + (i *                        (HEARTS_CARD_WIDTH + HEARTS_CARD_GAP));
+                        const cardY = HEARTS_PLAYER_HAND_Y;
+
+                        if (x >= cardX && x <= cardX + HEARTS_CARD_WIDTH && y >= cardY && y <= cardY + HEARTS_CARD_HEIGHT) {
+                            handleHeartsPlayerMove(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        document.getElementById('newHeartsGameBtn').addEventListener('click', resetHeartsGame);
+
+        resetHeartsGame();
+    </script>
+</body>
+</html>

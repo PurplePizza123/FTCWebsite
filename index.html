@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .nav-menu {
+            background-color: #333;
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000; /* Ensures it appears above other content */
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .nav-menu a:hover {
+            background-color: #555;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 80px auto 20px; /* Adjusted margin to accommodate fixed navbar */
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container h1 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .container p {
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .container img:first-child {
+            border-radius: 50%;
+            max-width: 200px;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 5px solid white;
+            object-fit: cover; /* Ensures the image fills the oval shape without stretching */
+            height: 200px; /* Set a fixed height to maintain the oval shape */
+        }
+
+        .container img.centered {
+            display: block;
+            margin: 20px auto;
+            border-radius: 50%; /* Oval frame */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 5px solid white;
+            max-width: 100%; /* Adjust size as needed */
+            height: auto;
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-container img {
+            max-width: 300px; /* Adjusted max-width for smaller images */
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container video {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%; /* Ensure video fills container width */
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <script>
+        // Konami Code sequence
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Escape'];
+        let konamiCodePosition = 0;
+
+        document.addEventListener('keydown', function(e) {
+            // Check if the key pressed matches the next key in the Konami Code sequence
+            if (e.key === konamiCode[konamiCodePosition]) {
+                konamiCodePosition++;
+
+                // If the full sequence is entered, redirect to games.html
+                if (konamiCodePosition === konamiCode.length) {
+                    window.location.href = 'games.html';
+                }
+            } else {
+                // Reset the sequence if an incorrect key is pressed
+                konamiCodePosition = 0;
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div class="nav-menu">
+        <a href="index.html">Home</a>
+        <a href="field.html">FTC Field Path Planner</a>
+    </div>
+    <div class="container">
+        <h1>About Me</h1>
+        <img src="ian.jpg" alt="Ian's Photo" class="centered">
+        <p>
+            I'm Ian, an eleventh-grade student with a passion for technology that knows no bounds. My heart beats for the exciting world of FIRST Tech Challenge (FTC) robotics, where innovation meets competition. When I'm not tinkering with robots or strategizing for the next big match, you'll find me immersed in the intricate world of programming, turning lines of code into functional, creative solutions.
+        </p>
+        <p>
+            As a high school junior, I'm constantly pushing the boundaries of what I can learn and create. This website is a window into my journey through the realms of robotics and software development. Here, you'll find projects I've worked on, insights I've gained, and the aspirations that drive me forward in this ever-evolving field.
+        </p>
+        <p>
+            Join me as I navigate the challenges of FTC, share my programming adventures, and explore the endless possibilities that technology offers. Whether you're a fellow robotics enthusiast, a coding aficionado, or simply curious about what the next generation of tech innovators is up to, I'm excited to share my experiences with you!
+        </p>
+        <p>
+            Some of my goals include excelling in my AP Computer Science class and pre-calculus studies. I am passionate about pursuing a career in computer science. In addition to technology, I also enjoy chess and Nintendo games, especially those on the Switch and the classic NES. The <b>Konami Code</b> holds a special place in my heart, and "Escape" is a great start!
+        </p>
+        <p>
+            Go Devildogs, team #11206!
+        </p>
+        <div class="image-container">
+            <img src="robot.png" alt="Robot Image">
+            <img src="chess.png" alt="Chess Image">
+        </div>
+        <video controls>
+            <source src="video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</body>
+</html>
