@@ -1,521 +1,481 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solitaire</title>
-    <link rel="icon" href="canvas.jpg" type="image/jpg" />
+    <link rel="icon" href="canvas.jpg" type="image/jpg">
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f0f0f0;
-        margin: 0;
-        padding: 20px;
-      }
-      .container {
-        max-width: 1000px;
-        margin: 0 auto;
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-      h1,
-      h2 {
-        text-align: center;
-        color: #333;
-      }
-      #gameCanvas {
-        display: block;
-        margin: 0 auto;
-        border: 1px solid #ccc;
-      }
-      button {
-        display: block;
-        margin: 10px auto;
-        padding: 10px 20px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #45a049;
-      }
-      .nav-menu {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-      .nav-menu a {
-        text-decoration: none;
-        color: #333;
-        padding: 10px 20px;
-        border-radius: 4px;
-        background-color: #eee;
-        margin: 0 10px;
-      }
-      .nav-menu a:hover {
-        background-color: #ddd;
-      }
-      .instructions {
-        background-color: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .nav-menu {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav-menu a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 4px;
+            background-color: #eee;
+            margin: 0 10px;
+        }
+        .nav-menu a:hover {
+            background-color: #ddd;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="nav-menu">
-      <a href="index.html">Home</a>
-      <a href="field.html">FTC Field Path Planner</a>
+        <a href="index.html">Home</a>
+        <a href="field.html">FTC Field Path Planner</a>
     </div>
     <div class="container">
-      <h1>Solitaire</h1>
-      <canvas id="gameCanvas" width="1000" height="600"></canvas>
-      <button id="newGameBtn">New Game</button>
-      <div class="instructions">
-        <h2>Instructions:</h2>
-        <ul>
-          <li>
-            Arrange cards in descending order (King to Ace) in alternating
-            colors (black and red).
-          </li>
-          <li>
-            Click on the deck to draw cards to the waste pile. You can move
-            cards from the waste pile to the tableau or foundation piles.
-          </li>
-          <li>
-            Foundation piles must start with an Ace and build up to King, all in
-            the same suit.
-          </li>
-          <li>Tableau piles build down in alternating colors.</li>
-          <li>Click on cards to move them around.</li>
-          <li>Goal: Move all cards to the foundation piles to win!</li>
-        </ul>
-      </div>
+        <h1>Solitaire</h1>
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <button id="newGameBtn">New Game</button>
+        <div class="instructions">
+            <h2>Instructions:</h2>
+            <ul>
+                <li>Arrange cards in descending order (King to Ace) in alternating colors (black and red).</li>
+                <li>Click on the deck to draw cards to the waste pile. You can move cards from the waste pile to the tableau or foundation piles.</li>
+                <li>Foundation piles must start with an Ace and build up to King, all in the same suit.</li>
+                <li>Tableau piles build down in alternating colors.</li>
+                <li>Click on cards to move them around.</li>
+                <li>Goal: Move all cards to the foundation piles to win!</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-      // Constants
-      const CARD_WIDTH = 70;
-      const CARD_HEIGHT = 100;
-      const CARD_GAP = 20;
-      const TABLEAU_OFFSET_Y = 150;
-      const TABLEAU_OFFSET_X = 130;
-      const FOUNDATION_OFFSET_Y = 20;
-      const FOUNDATION_OFFSET_X = 560;
-      const CARD_BACK_COLOR = "#999";
-      const CARD_COLORS = {
-        "♠": "black",
-        "♣": "black",
-        "♥": "red",
-        "♦": "red",
-      };
-      const DECK_OFFSET_X = 20;
-      const DECK_OFFSET_Y = 20;
-      const WASTE_OFFSET_X = 110;
-      const WASTE_OFFSET_Y = 20;
-
-      // Game state
-      let gameState;
-
-      function initializeGameState() {
-        return {
-          deck: [],
-          tableau: [[], [], [], [], [], [], []],
-          foundation: [[], [], [], []],
-          stock: [],
-          waste: [],
-          won: false,
+        // Constants
+        const CARD_WIDTH = 70;
+        const CARD_HEIGHT = 100;
+        const CARD_GAP = 20;
+        const TABLEAU_OFFSET_Y = 150;
+        const TABLEAU_OFFSET_X = 130;
+        const FOUNDATION_OFFSET_Y = 20;
+        const FOUNDATION_OFFSET_X = 560;
+        const CARD_BACK_COLOR = '#999';
+        const CARD_COLORS = {
+            '♠': 'black',
+            '♣': 'black',
+            '♥': 'red',
+            '♦': 'red'
         };
-      }
+        const DECK_OFFSET_X = 20;
+        const DECK_OFFSET_Y = 20;
+        const WASTE_OFFSET_X = 110;
+        const WASTE_OFFSET_Y = 20;
+        const MAX_VISIBLE_CARDS = 5;
 
-      function shuffleDeck() {
-        let deck = [];
-        const suits = ["♠", "♣", "♥", "♦"];
-        const ranks = [
-          "A",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9",
-          "10",
-          "J",
-          "Q",
-          "K",
-        ];
+        // Game state
+        let gameState;
 
-        for (let suit of suits) {
-          for (let rank of ranks) {
-            deck.push({ suit, rank, isFaceUp: false });
-          }
+        function initializeGameState() {
+            return {
+                deck: [],
+                tableau: [[], [], [], [], [], [], []],
+                foundation: [[], [], [], []],
+                stock: [],
+                waste: [],
+                won: false
+            };
         }
 
-        // Fisher-Yates shuffle algorithm
-        for (let i = deck.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [deck[i], deck[j]] = [deck[j], deck[i]];
-        }
+        function shuffleDeck() {
+            let deck = [];
+            const suits = ['♠', '♣', '♥', '♦'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-        return deck;
-      }
-
-      function dealCards() {
-        for (let i = 0; i < 7; i++) {
-          for (let j = 0; j <= i; j++) {
-            let card = gameState.deck.pop();
-            if (j === i) {
-              card.isFaceUp = true;
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ suit, rank, isFaceUp: false });
+                }
             }
-            gameState.tableau[i].push(card);
-          }
-        }
-      }
 
-      function drawCard(card, x, y) {
-        if (card.isFaceUp) {
-          ctx.fillStyle = "white";
-          ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-          ctx.strokeStyle = "black";
-          ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-          ctx.fillStyle = CARD_COLORS[card.suit];
-          ctx.font = "20px Arial";
-          ctx.fillText(card.rank + card.suit, x + 5, y + 25);
-        } else {
-          ctx.fillStyle = CARD_BACK_COLOR;
-          ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-          ctx.strokeStyle = "black";
-          ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-        }
-      }
-
-      function drawTableau() {
-        for (let i = 0; i < 7; i++) {
-          for (let j = 0; j < gameState.tableau[i].length; j++) {
-            const card = gameState.tableau[i][j];
-            const x = i * (CARD_WIDTH + CARD_GAP) + TABLEAU_OFFSET_X;
-            const y = j * (CARD_HEIGHT / 2) + TABLEAU_OFFSET_Y; // Changed from CARD_HEIGHT / 3
-            drawCard(card, x, y);
-          }
-        }
-      }
-      function drawFoundation() {
-        for (let i = 0; i < 4; i++) {
-          const x = i * (CARD_WIDTH + CARD_GAP) + FOUNDATION_OFFSET_X;
-          const y = FOUNDATION_OFFSET_Y;
-          ctx.strokeStyle = "#888";
-          ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-          if (gameState.foundation[i].length > 0) {
-            drawCard(
-              gameState.foundation[i][gameState.foundation[i].length - 1],
-              x,
-              y
-            );
-          }
-        }
-      }
-
-      function drawWaste() {
-        if (gameState.waste.length > 0) {
-          const x = WASTE_OFFSET_X;
-          const y = WASTE_OFFSET_Y;
-          drawCard(gameState.waste[gameState.waste.length - 1], x, y);
-        }
-      }
-
-      function drawDeck() {
-        const x = DECK_OFFSET_X;
-        const y = DECK_OFFSET_Y;
-        ctx.fillStyle = CARD_BACK_COLOR;
-        ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-        ctx.strokeStyle = "black";
-        ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
-      }
-
-      function drawGame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawTableau();
-        drawFoundation();
-        drawWaste();
-        drawDeck();
-      }
-
-      function resetGame() {
-        gameState = initializeGameState();
-        gameState.deck = shuffleDeck();
-        dealCards();
-        drawGame();
-      }
-
-      function handleNewGameClick() {
-        resetGame();
-      }
-
-      function checkWin() {
-        if (gameState.won) return true;
-        return gameState.foundation.every((pile) => pile.length === 13);
-      }
-
-      function celebrateWin() {
-        gameState.won = true;
-        document.body.style.background =
-          "linear-gradient(to right, violet, indigo, blue, green, yellow, orange, red)";
-        createConfetti();
-      }
-
-      function isValidMove(
-        cardToMove,
-        targetPile,
-        isFoundation = false,
-        isFromFoundation = false
-      ) {
-        if (isFoundation) {
-          if (targetPile.length === 0) {
-            return cardToMove.rank === "A";
-          } else {
-            const lastCard = targetPile[targetPile.length - 1];
-            return (
-              cardToMove.suit === lastCard.suit &&
-              getRankValue(cardToMove.rank) === getRankValue(lastCard.rank) + 1
-            );
-          }
-        } else {
-          if (targetPile.length === 0) {
-            return cardToMove.rank === "K";
-          } else {
-            const lastCard = targetPile[targetPile.length - 1];
-            const isOppositeColor =
-              CARD_COLORS[lastCard.suit] !== CARD_COLORS[cardToMove.suit];
-            return (
-              isOppositeColor &&
-              getRankValue(lastCard.rank) === getRankValue(cardToMove.rank) + 1
-            );
-          }
-        }
-      }
-
-      function getRankValue(rank) {
-        const rankValues = { A: 1, J: 11, Q: 12, K: 13 };
-        return rankValues[rank] || parseInt(rank);
-      }
-
-      function moveCards(sourceIndex, sourcePile, targetPile) {
-        const cardsToMove = sourcePile.splice(sourceIndex);
-        targetPile.push(...cardsToMove);
-        if (
-          sourcePile.length > 0 &&
-          !sourcePile[sourcePile.length - 1].isFaceUp
-        ) {
-          sourcePile[sourcePile.length - 1].isFaceUp = true;
-        }
-        drawGame();
-        if (checkWin()) {
-          celebrateWin();
-        }
-      }
-
-      function moveCard(
-        sourceIndex,
-        sourcePile,
-        targetPile,
-        isFoundation = false
-      ) {
-        const cardToMove = sourcePile[sourceIndex];
-        if (isValidMove(cardToMove, targetPile, isFoundation)) {
-          moveCards(sourceIndex, sourcePile, targetPile);
-        }
-      }
-
-      canvas.addEventListener("click", function (event) {
-        const x = event.offsetX;
-        const y = event.offsetY;
-
-        // Check if clicked on the deck
-        if (
-          x >= DECK_OFFSET_X &&
-          x <= DECK_OFFSET_X + CARD_WIDTH &&
-          y >= DECK_OFFSET_Y &&
-          y <= DECK_OFFSET_Y + CARD_HEIGHT
-        ) {
-          if (gameState.deck.length > 0) {
-            const card = gameState.deck.pop();
-            card.isFaceUp = true;
-            gameState.waste.push(card);
-          } else {
-            gameState.deck = gameState.waste.reverse();
-            gameState.waste = [];
-            gameState.deck.forEach((card) => (card.isFaceUp = false));
-          }
-          drawGame();
-          return;
-        }
-
-        // Check if clicked on the waste pile
-        if (gameState.waste.length > 0) {
-          const wasteX = WASTE_OFFSET_X;
-          const wasteY = WASTE_OFFSET_Y;
-          if (
-            x >= wasteX &&
-            x <= wasteX + CARD_WIDTH &&
-            y >= wasteY &&
-            y <= wasteY + CARD_HEIGHT
-          ) {
-            const card = gameState.waste[gameState.waste.length - 1];
-            for (let i = 0; i < 4; i++) {
-              if (isValidMove(card, gameState.foundation[i], true)) {
-                moveCard(
-                  gameState.waste.length - 1,
-                  gameState.waste,
-                  gameState.foundation[i],
-                  true
-                );
-                return;
-              }
+            // Fisher-Yates shuffle algorithm
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
             }
+
+            return deck;
+        }
+
+        function dealCards() {
             for (let i = 0; i < 7; i++) {
-              if (isValidMove(card, gameState.tableau[i])) {
-                moveCard(
-                  gameState.waste.length - 1,
-                  gameState.waste,
-                  gameState.tableau[i]
-                );
+                for (let j = 0; j <= i; j++) {
+                    let card = gameState.deck.pop();
+                    if (j === i) {
+                        card.isFaceUp = true;
+                    }
+                    gameState.tableau[i].push(card);
+                }
+            }
+        }
+
+        function drawCard(card, x, y) {
+            if (card.isFaceUp) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                ctx.fillStyle = CARD_COLORS[card.suit];
+                ctx.font = '20px Arial';
+                ctx.fillText(card.rank + card.suit, x + 5, y + 25);
+            } else {
+                ctx.fillStyle = CARD_BACK_COLOR;
+                ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+            }
+        }
+
+        function drawTableau() {
+    for (let i = 0; i < 7; i++) {
+        const pile = gameState.tableau[i];
+        const x = (i * (CARD_WIDTH + CARD_GAP)) + TABLEAU_OFFSET_X;
+        let y = TABLEAU_OFFSET_Y;
+
+        if (pile.length <= MAX_VISIBLE_CARDS) {
+            // Draw all cards if there are MAX_VISIBLE_CARDS or fewer
+            for (let j = 0; j < pile.length; j++) {
+                drawCard(pile[j], x, y);
+                y += pile[j].isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4;
+            }
+        } else {
+            // Draw hidden stack for overflow
+            const hiddenCount = pile.length - MAX_VISIBLE_CARDS;
+            ctx.fillStyle = CARD_BACK_COLOR;
+            ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT / 4);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT / 4);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText(`+${hiddenCount}`, x + 5, y + 15);
+            
+            y += CARD_HEIGHT / 4;
+
+            // Draw the visible cards, ensuring the top card is fully visible
+            for (let j = pile.length - MAX_VISIBLE_CARDS; j < pile.length - 1; j++) {
+                drawCard(pile[j], x, y);
+                y += pile[j].isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4;
+            }
+
+            // Always draw the top card fully
+            if (pile.length > 0) {
+                drawCard(pile[pile.length - 1], x, canvas.height - CARD_HEIGHT - 250);
+            }
+        }
+    }
+}
+
+        function drawFoundation() {
+            for (let i = 0; i < 4; i++) {
+                const x = (i * (CARD_WIDTH + CARD_GAP)) + FOUNDATION_OFFSET_X;
+                const y = FOUNDATION_OFFSET_Y;
+                ctx.strokeStyle = '#888';
+                ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+                if (gameState.foundation[i].length > 0) {
+                    drawCard(gameState.foundation[i][gameState.foundation[i].length - 1], x, y);
+                }
+            }
+        }
+
+        function drawWaste() {
+            if (gameState.waste.length > 0) {
+                const x = WASTE_OFFSET_X;
+                const y = WASTE_OFFSET_Y;
+                drawCard(gameState.waste[gameState.waste.length - 1], x, y);
+            }
+        }
+
+        function drawDeck() {
+            const x = DECK_OFFSET_X;
+            const y = DECK_OFFSET_Y;
+            ctx.fillStyle = CARD_BACK_COLOR;
+            ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTableau();
+            drawFoundation();
+            drawWaste();
+            drawDeck();
+        }
+
+        function resetGame() {
+            gameState = initializeGameState();
+            gameState.deck = shuffleDeck();
+            dealCards();
+            drawGame();
+        }
+
+        function handleNewGameClick() {
+            resetGame();
+        }
+
+        function checkWin() {
+            if (gameState.won) return true;
+            return gameState.foundation.every(pile => pile.length === 13);
+        }
+
+        function celebrateWin() {
+            gameState.won = true;
+            document.body.style.background = 'linear-gradient(to right, violet, indigo, blue, green, yellow, orange, red)';
+            createConfetti();
+        }
+
+        function isValidMove(cardToMove, targetPile, isFoundation = false) {
+            if (isFoundation) {
+                if (targetPile.length === 0) {
+                    return cardToMove.rank === 'A';
+                } else {
+                    const lastCard = targetPile[targetPile.length - 1];
+                    return cardToMove.suit === lastCard.suit && 
+                           getRankValue(cardToMove.rank) === getRankValue(lastCard.rank) + 1;
+                }
+            } else {
+                if (targetPile.length === 0) {
+                    return cardToMove.rank === 'K';
+                } else {
+                    const lastCard = targetPile[targetPile.length - 1];
+                    const isOppositeColor = (CARD_COLORS[lastCard.suit] !== CARD_COLORS[cardToMove.suit]);
+                    return isOppositeColor && (getRankValue(lastCard.rank) === getRankValue(cardToMove.rank) + 1);
+                }
+            }
+        }
+
+        function getRankValue(rank) {
+            const rankValues = {'A': 1, 'J': 11, 'Q': 12, 'K': 13};
+            return rankValues[rank] || parseInt(rank);
+        }
+
+        function moveCards(sourceIndex, sourcePile, targetPile) {
+            const cardsToMove = sourcePile.splice(sourceIndex);
+            targetPile.push(...cardsToMove);
+            if (sourcePile.length > 0 && !sourcePile[sourcePile.length - 1].isFaceUp) {
+                sourcePile[sourcePile.length - 1].isFaceUp = true;
+            }
+            drawGame();
+            if (checkWin()) {
+                celebrateWin();
+            }
+        }
+
+        function moveCard(sourceIndex, sourcePile, targetPile, isFoundation = false) {
+            const cardToMove = sourcePile[sourceIndex];
+            if (isValidMove(cardToMove, targetPile, isFoundation)) {
+                moveCards(sourceIndex, sourcePile, targetPile);
+            }
+        }
+
+        canvas.addEventListener('click', function(event) {
+            const x = event.offsetX;
+            const y = event.offsetY;
+
+            // Check if clicked on the deck
+            if (x >= DECK_OFFSET_X && x <= DECK_OFFSET_X + CARD_WIDTH && y >= DECK_OFFSET_Y && y <= DECK_OFFSET_Y + CARD_HEIGHT) {
+                if (gameState.deck.length > 0) {
+                    const card = gameState.deck.pop();
+                    card.isFaceUp = true;
+                    gameState.waste.push(card);
+                } else {
+                    gameState.deck = gameState.waste.reverse();
+                    gameState.waste = [];
+                    gameState.deck.forEach(card => card.isFaceUp = false);
+                }
+                drawGame();
                 return;
-              }
             }
-          }
-        }
 
-        // Check if clicked on the foundation
-        for (let i = 0; i < 4; i++) {
-          const foundationX = i * (CARD_WIDTH + CARD_GAP) + FOUNDATION_OFFSET_X;
-          const foundationY = FOUNDATION_OFFSET_Y;
-          if (
-            x >= foundationX &&
-            x <= foundationX + CARD_WIDTH &&
-            y >= foundationY &&
-            y <= foundationY + CARD_HEIGHT
-          ) {
-            if (gameState.foundation[i].length > 0) {
-              const card =
-                gameState.foundation[i][gameState.foundation[i].length - 1];
-              for (let j = 0; j < 7; j++) {
-                if (isValidMove(card, gameState.tableau[j], false, true)) {
-                  moveCard(
-                    gameState.foundation[i].length - 1,
-                    gameState.foundation[i],
-                    gameState.tableau[j]
-                  );
-                  return;
+            // Check if clicked on the waste pile
+            if (gameState.waste.length > 0) {
+                const wasteX = WASTE_OFFSET_X;
+                const wasteY = WASTE_OFFSET_Y;
+                if (x >= wasteX && x <= wasteX + CARD_WIDTH && y >= wasteY && y <= wasteY + CARD_HEIGHT) {
+                    const card = gameState.waste[gameState.waste.length - 1];
+                    for (let i = 0; i < 4; i++) {
+                        if (isValidMove(card, gameState.foundation[i], true)) {
+                            moveCard(gameState.waste.length - 1, gameState.waste, gameState.foundation[i], true);
+                            return;
+                        }
+                    }
+                    for (let i = 0; i < 7; i++) {
+                        if (isValidMove(card, gameState.tableau[i])) {
+                            moveCard(gameState.waste.length - 1, gameState.waste, gameState.tableau[i]);
+                            return;
+                        }
+                    }
                 }
-              }
             }
-            return;
-          }
-        }
 
-        // Check if clicked on the tableau
-        for (let i = 0; i < 7; i++) {
-          const pileX = i * (CARD_WIDTH + CARD_GAP) + TABLEAU_OFFSET_X;
-          const pileY = TABLEAU_OFFSET_Y;
-          for (let j = gameState.tableau[i].length - 1; j >= 0; j--) {
-            const cardY = pileY + j * (CARD_HEIGHT / 3);
-            if (
-              x >= pileX &&
-              x <= pileX + CARD_WIDTH &&
-              y >= cardY &&
-              y <= cardY + CARD_HEIGHT
-            ) {
-              const clickedCard = gameState.tableau[i][j];
-              if (!clickedCard.isFaceUp) return;
-
-              const cardsToMove = gameState.tableau[i].slice(j);
-
-              // Try moving to foundation first (only single cards)
-              if (cardsToMove.length === 1) {
-                for (let k = 0; k < 4; k++) {
-                  if (isValidMove(clickedCard, gameState.foundation[k], true)) {
-                    moveCard(
-                      j,
-                      gameState.tableau[i],
-                      gameState.foundation[k],
-                      true
-                    );
+            // Check if clicked on the foundation
+            for (let i = 0; i < 4; i++) {
+                const foundationX = (i * (CARD_WIDTH + CARD_GAP)) + FOUNDATION_OFFSET_X;
+                const foundationY = FOUNDATION_OFFSET_Y;
+                if (x >= foundationX && x <= foundationX + CARD_WIDTH && y >= foundationY && y <= foundationY + CARD_HEIGHT) {
+                    if (gameState.foundation[i].length > 0) {
+                        const card = gameState.foundation[i][gameState.foundation[i].length - 1];
+                        for (let j = 0; j < 7; j++) {
+                            if (isValidMove(card, gameState.tableau[j])) {
+                                moveCard(gameState.foundation[i].length - 1, gameState.foundation[i], gameState.tableau[j]);
+                                return;
+                            }
+                        }
+                    }
                     return;
-                  }
                 }
-              }
+            }
 
-              // Then try moving to other tableau piles
-              for (let k = 0; k < 7; k++) {
-                if (
-                  k !== i &&
-                  isValidMove(cardsToMove[0], gameState.tableau[k])
-                ) {
-                  moveCards(j, gameState.tableau[i], gameState.tableau[k]);
-                  return;
+// Check if clicked on the tableau
+for (let i = 0; i < 7; i++) {
+                const pileX = (i * (CARD_WIDTH + CARD_GAP)) + TABLEAU_OFFSET_X;
+                const pileY = TABLEAU_OFFSET_Y;
+                if (x >= pileX && x <= pileX + CARD_WIDTH) {
+                    const pile = gameState.tableau[i];
+                    let cardY = pileY;
+                    let clickedIndex = -1;
+
+                    if (pile.length > MAX_VISIBLE_CARDS) {
+                        // Check if clicked on the hidden stack
+                        if (y >= cardY && y <= cardY + CARD_HEIGHT / 4) {
+                            clickedIndex = pile.length - MAX_VISIBLE_CARDS;
+                        }
+                        cardY += CARD_HEIGHT / 4;
+                    }
+
+                    // Check visible cards
+                    const startIndex = Math.max(0, pile.length - MAX_VISIBLE_CARDS);
+                    for (let j = startIndex; j < pile.length; j++) {
+                        const card = pile[j];
+                        const nextCardY = cardY + (card.isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4);
+                        if (y >= cardY && y <= nextCardY) {
+                            clickedIndex = j;
+                            break;
+                        }
+                        cardY = nextCardY;
+                    }
+
+                    if (clickedIndex !== -1) {
+                        const clickedCard = pile[clickedIndex];
+                        if (!clickedCard.isFaceUp) return;
+
+                        const cardsToMove = pile.slice(clickedIndex);
+                        
+                        // Try moving to foundation first (only single cards)
+                        if (cardsToMove.length === 1) {
+                            for (let k = 0; k < 4; k++) {
+                                if (isValidMove(clickedCard, gameState.foundation[k], true)) {
+                                    moveCard(clickedIndex, pile, gameState.foundation[k], true);
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Then try moving to other tableau piles
+                        for (let k = 0; k < 7; k++) {
+                            if (k !== i && isValidMove(clickedCard, gameState.tableau[k])) {
+                                moveCards(clickedIndex, pile, gameState.tableau[k]);
+                                return;
+                            }
+                        }
+                    }
+                    return;
                 }
-              }
-              return; // Exit after checking moves for the clicked card
             }
-          }
-        }
-      });
+        });
 
-      document
-        .getElementById("newGameBtn")
-        .addEventListener("click", handleNewGameClick);
+        function createConfetti() {
+            const confettiCount = 200;
+            const confetti = [];
 
-      function createConfetti() {
-        const confettiCount = 200;
-        const confetti = [];
-
-        for (let i = 0; i < confettiCount; i++) {
-          confetti.push({
-            x: Math.random() * canvas.width,
-            y: -10,
-            size: Math.random() * 5 + 5,
-            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-            speed: Math.random() * 3 + 1,
-          });
-        }
-
-        function animateConfetti() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          drawGame(); // Redraw the game state
-
-          for (let i = 0; i < confetti.length; i++) {
-            const c = confetti[i];
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, c.size, 0, 2 * Math.PI);
-            ctx.fillStyle = c.color;
-            ctx.fill();
-
-            c.y += c.speed;
-            if (c.y > canvas.height) {
-              c.y = -10;
-              c.x = Math.random() * canvas.width;
+            for (let i = 0; i < confettiCount; i++) {
+                confetti.push({
+                    x: Math.random() * canvas.width,
+                    y: -10,
+                    size: Math.random() * 5 + 5,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    speed: Math.random() * 3 + 1
+                });
             }
-          }
 
-          if (gameState.won) {
-            requestAnimationFrame(animateConfetti);
-          }
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawGame();
+
+                for (let i = 0; i < confetti.length; i++) {
+                    const c = confetti[i];
+                    ctx.fillStyle = c.color;
+                    ctx.fillRect(c.x, c.y, c.size, c.size);
+                    c.y += c.speed;
+
+                    if (c.y > canvas.height) {
+                        c.y = -10;
+                        c.x = Math.random() * canvas.width;
+                    }
+                }
+
+                if (gameState.won) {
+                    requestAnimationFrame(animateConfetti);
+                }
+            }
+
+            animateConfetti();
         }
 
-        animateConfetti();
-      }
+        // Initialize the game
+        resetGame();
 
-      // Initialize game on page load
-      resetGame();
+        // Add event listener for the New Game button
+        document.getElementById('newGameBtn').addEventListener('click', handleNewGameClick);
     </script>
-  </body>
+</body>
 </html>
