@@ -72,7 +72,7 @@
     </div>
     <div class="container">
         <h1>Solitaire</h1>
-        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
         <button id="newGameBtn">New Game</button>
         <div class="instructions">
             <h2>Instructions:</h2>
@@ -110,7 +110,7 @@
         const DECK_OFFSET_Y = 20;
         const WASTE_OFFSET_X = 110;
         const WASTE_OFFSET_Y = 20;
-        const MAX_VISIBLE_CARDS = 5;
+        const CARD_SPACING = CARD_HEIGHT / 2;
 
         // Game state
         let gameState;
@@ -176,43 +176,36 @@
         }
 
         function drawTableau() {
-    for (let i = 0; i < 7; i++) {
-        const pile = gameState.tableau[i];
-        const x = (i * (CARD_WIDTH + CARD_GAP)) + TABLEAU_OFFSET_X;
-        let y = TABLEAU_OFFSET_Y;
+            for (let i = 0; i < 7; i++) {
+                const pile = gameState.tableau[i];
+                const x = (i * (CARD_WIDTH + CARD_GAP)) + TABLEAU_OFFSET_X;
+                let y = TABLEAU_OFFSET_Y;
 
-        if (pile.length <= MAX_VISIBLE_CARDS) {
-            // Draw all cards if there are MAX_VISIBLE_CARDS or fewer
-            for (let j = 0; j < pile.length; j++) {
-                drawCard(pile[j], x, y);
-                y += pile[j].isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4;
-            }
-        } else {
-            // Draw hidden stack for overflow
-            const hiddenCount = pile.length - MAX_VISIBLE_CARDS;
-            ctx.fillStyle = CARD_BACK_COLOR;
-            ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT / 4);
-            ctx.strokeStyle = 'black';
-            ctx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT / 4);
-            ctx.fillStyle = 'white';
-            ctx.font = '12px Arial';
-            ctx.fillText(`+${hiddenCount}`, x + 5, y + 15);
-            
-            y += CARD_HEIGHT / 4;
-
-            // Draw the visible cards, ensuring the top card is fully visible
-            for (let j = pile.length - MAX_VISIBLE_CARDS; j < pile.length - 1; j++) {
-                drawCard(pile[j], x, y);
-                y += pile[j].isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4;
-            }
-
-            // Always draw the top card fully
-            if (pile.length > 0) {
-                drawCard(pile[pile.length - 1], x, canvas.height - CARD_HEIGHT - 250);
+                for (let j = 0; j < pile.length; j++) {
+                    const card = pile[j];
+                    if (j === pile.length - 1) {
+                        // Draw the full top card
+                        drawCard(card, x, y);
+                    } else if (card.isFaceUp) {
+                        // Draw just the top part of face-up cards
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(x, y, CARD_WIDTH, CARD_SPACING);
+                        ctx.strokeStyle = 'black';
+                        ctx.strokeRect(x, y, CARD_WIDTH, CARD_SPACING);
+                        ctx.fillStyle = CARD_COLORS[card.suit];
+                        ctx.font = '20px Arial';
+                        ctx.fillText(card.rank + card.suit, x + 5, y + 25);
+                    } else {
+                        // Draw just the top part of face-down cards
+                        ctx.fillStyle = CARD_BACK_COLOR;
+                        ctx.fillRect(x, y, CARD_WIDTH, CARD_SPACING);
+                        ctx.strokeStyle = 'black';
+                        ctx.strokeRect(x, y, CARD_WIDTH, CARD_SPACING);
+                    }
+                    y += CARD_SPACING;
+                }
             }
         }
-    }
-}
 
         function drawFoundation() {
             for (let i = 0; i < 4; i++) {
@@ -375,60 +368,35 @@
                 }
             }
 
-// Check if clicked on the tableau
-for (let i = 0; i < 7; i++) {
+            // Check if clicked on the tableau
+            for (let i = 0; i < 7; i++) {
                 const pileX = (i * (CARD_WIDTH + CARD_GAP)) + TABLEAU_OFFSET_X;
                 const pileY = TABLEAU_OFFSET_Y;
                 if (x >= pileX && x <= pileX + CARD_WIDTH) {
                     const pile = gameState.tableau[i];
                     let cardY = pileY;
-                    let clickedIndex = -1;
-
-                    if (pile.length > MAX_VISIBLE_CARDS) {
-                        // Check if clicked on the hidden stack
-                        if (y >= cardY && y <= cardY + CARD_HEIGHT / 4) {
-                            clickedIndex = pile.length - MAX_VISIBLE_CARDS;
-                        }
-                        cardY += CARD_HEIGHT / 4;
-                    }
-
-                    // Check visible cards
-                    const startIndex = Math.max(0, pile.length - MAX_VISIBLE_CARDS);
-                    for (let j = startIndex; j < pile.length; j++) {
-                        const card = pile[j];
-                        const nextCardY = cardY + (card.isFaceUp ? CARD_HEIGHT / 3 : CARD_HEIGHT / 4);
-                        if (y >= cardY && y <= nextCardY) {
-                            clickedIndex = j;
-                            break;
-                        }
-                        cardY = nextCardY;
-                    }
-
-                    if (clickedIndex !== -1) {
-                        const clickedCard = pile[clickedIndex];
-                        if (!clickedCard.isFaceUp) return;
-
-                        const cardsToMove = pile.slice(clickedIndex);
-                        
-                        // Try moving to foundation first (only single cards)
-                        if (cardsToMove.length === 1) {
-                            for (let k = 0; k < 4; k++) {
-                                if (isValidMove(clickedCard, gameState.foundation[k], true)) {
-                                    moveCard(clickedIndex, pile, gameState.foundation[k], true);
-                                    return;
+                    for (let j = 0; j < pile.length; j++) {
+                        if (y >= cardY && y <= cardY + CARD_SPACING) {
+                            if (pile[j].isFaceUp) {
+                                // Try to move to foundation first
+                                for (let k = 0; k < 4; k++) {
+                                    if (isValidMove(pile[j], gameState.foundation[k], true)) {
+                                        moveCard(j, pile, gameState.foundation[k], true);
+                                        return;
+                                    }
+                                }
+                                // If not possible, try to move to another tableau pile
+                                for (let k = 0; k < 7; k++) {
+                                    if (k !== i && isValidMove(pile[j], gameState.tableau[k])) {
+                                        moveCards(j, pile, gameState.tableau[k]);
+                                        return;
+                                    }
                                 }
                             }
+                            return;
                         }
-
-                        // Then try moving to other tableau piles
-                        for (let k = 0; k < 7; k++) {
-                            if (k !== i && isValidMove(clickedCard, gameState.tableau[k])) {
-                                moveCards(clickedIndex, pile, gameState.tableau[k]);
-                                return;
-                            }
-                        }
+                        cardY += CARD_SPACING;
                     }
-                    return;
                 }
             }
         });
@@ -440,7 +408,7 @@ for (let i = 0; i < 7; i++) {
             for (let i = 0; i < confettiCount; i++) {
                 confetti.push({
                     x: Math.random() * canvas.width,
-                    y: -10,
+                    y: Math.random() * canvas.height,
                     size: Math.random() * 5 + 5,
                     color: `hsl(${Math.random() * 360}, 100%, 50%)`,
                     speed: Math.random() * 3 + 1
@@ -452,30 +420,24 @@ for (let i = 0; i < 7; i++) {
                 drawGame();
 
                 for (let i = 0; i < confetti.length; i++) {
-                    const c = confetti[i];
-                    ctx.fillStyle = c.color;
-                    ctx.fillRect(c.x, c.y, c.size, c.size);
-                    c.y += c.speed;
+                    ctx.fillStyle = confetti[i].color;
+                    ctx.fillRect(confetti[i].x, confetti[i].y, confetti[i].size, confetti[i].size);
+                    confetti[i].y += confetti[i].speed;
 
-                    if (c.y > canvas.height) {
-                        c.y = -10;
-                        c.x = Math.random() * canvas.width;
+                    if (confetti[i].y > canvas.height) {
+                        confetti[i].y = -confetti[i].size;
                     }
                 }
 
-                if (gameState.won) {
-                    requestAnimationFrame(animateConfetti);
-                }
+                requestAnimationFrame(animateConfetti);
             }
 
             animateConfetti();
         }
 
-        // Initialize the game
-        resetGame();
-
-        // Add event listener for the New Game button
         document.getElementById('newGameBtn').addEventListener('click', handleNewGameClick);
+
+        resetGame();
     </script>
 </body>
 </html>
