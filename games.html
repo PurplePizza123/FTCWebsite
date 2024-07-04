@@ -304,10 +304,24 @@
         }
 
         function moveCard(sourceIndex, sourcePile, targetPile, isFoundation = false) {
+            if (isFoundation) {
+                // Only allow moving the top card to foundation
+                if (sourceIndex !== sourcePile.length - 1) return;
+            }
             const cardToMove = sourcePile[sourceIndex];
             if (isValidMove(cardToMove, targetPile, isFoundation)) {
                 moveCards(sourceIndex, sourcePile, targetPile);
             }
+        }
+
+        function isValidSequence(pile, startIndex) {
+            for (let i = startIndex; i < pile.length - 1; i++) {
+                if (getRankValue(pile[i].rank) !== getRankValue(pile[i+1].rank) + 1 ||
+                    CARD_COLORS[pile[i].suit] === CARD_COLORS[pile[i+1].suit]) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         canvas.addEventListener('click', function(event) {
@@ -378,16 +392,18 @@
                     for (let j = 0; j < pile.length; j++) {
                         if (y >= cardY && y <= cardY + CARD_SPACING) {
                             if (pile[j].isFaceUp) {
-                                // Try to move to foundation first
-                                for (let k = 0; k < 4; k++) {
-                                    if (isValidMove(pile[j], gameState.foundation[k], true)) {
-                                        moveCard(j, pile, gameState.foundation[k], true);
-                                        return;
+                                // Try to move to foundation first (only top card)
+                                if (j === pile.length - 1) {
+                                    for (let k = 0; k < 4; k++) {
+                                        if (isValidMove(pile[j], gameState.foundation[k], true)) {
+                                            moveCard(j, pile, gameState.foundation[k], true);
+                                            return;
+                                        }
                                     }
                                 }
-                                // If not possible, try to move to another tableau pile
+                                // If not possible or not top card, try to move to another tableau pile
                                 for (let k = 0; k < 7; k++) {
-                                    if (k !== i && isValidMove(pile[j], gameState.tableau[k])) {
+                                    if (k !== i && isValidSequence(pile, j) && isValidMove(pile[j], gameState.tableau[k])) {
                                         moveCards(j, pile, gameState.tableau[k]);
                                         return;
                                     }
