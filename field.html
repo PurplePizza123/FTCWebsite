@@ -77,6 +77,26 @@
             word-wrap: break-word;
         }
 </style>
+<script>
+    // Konami Code sequence
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Escape'];
+    let konamiCodePosition = 0;
+
+    document.addEventListener('keydown', function(e) {
+        // Check if the key pressed matches the next key in the Konami Code sequence
+        if (e.key === konamiCode[konamiCodePosition]) {
+            konamiCodePosition++;
+
+            // If the full sequence is entered, redirect to games.html
+            if (konamiCodePosition === konamiCode.length) {
+                window.location.href = 'games.html';
+            }
+        } else {
+            // Reset the sequence if an incorrect key is pressed
+            konamiCodePosition = 0;
+        }
+    });
+</script>
 </head>
 <body>
     <div id="menu">
